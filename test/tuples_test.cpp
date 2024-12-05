@@ -20,7 +20,7 @@ TEST(Tuples, AsTupleViewCodegenBranches)
     // so using this instead.
     if constexpr ((false))
     {
-        static constexpr std::size_t MAX_VARIABLE_COUNT = 400;
+        static constexpr std::size_t MAX_VARIABLE_COUNT = 720;
         static constexpr std::size_t GROUP_SIZE = 32;
         static constexpr std::size_t GROUP_COUNT =
             int_math::divide_integers_rounding_up(MAX_VARIABLE_COUNT, GROUP_SIZE);
@@ -53,7 +53,7 @@ TEST(Tuples, AsTupleViewCodegenBranches)
         std::string variables{};
 
         std::cout << "    // codegen-start\n";
-        std::cout << "    // clang-format off \n";
+        std::cout << "    // clang-format off\n";
         for (std::size_t group_id = 0; group_id < GROUP_COUNT; group_id++)
         {
             const std::size_t starting_i = group_id * GROUP_SIZE + 1;
@@ -65,7 +65,7 @@ TEST(Tuples, AsTupleViewCodegenBranches)
             do_group(starting_i, ending_i, variables);
             std::cout << "    }\n";
         }
-        std::cout << "    // clang-format on \n";
+        std::cout << "    // clang-format on\n";
         std::cout << "    // codegen-end\n";
     }
 }
