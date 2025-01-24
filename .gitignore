@@ -47,3 +47,7 @@ vcpkg_installed/*
 
 ### ctags ###
 tags
+
+
+### Misc ###
+aarch64/gcc-arm-11.2-2022.02-x86_64-aarch64-none-linux-gnu*
