@@ -4,6 +4,7 @@
 #include "fixed_containers/bidirectional_iterator.hpp"
 #include "fixed_containers/concepts.hpp"
 #include "fixed_containers/enum_utils.hpp"
+#include "fixed_containers/fixed_bitset.hpp"
 #include "fixed_containers/erase_if.hpp"
 #include "fixed_containers/filtered_integer_range_iterator.hpp"
 
@@ -116,11 +117,12 @@ private:
     using EnumAdapterType = rich_enums::EnumAdapter<K>;
     static constexpr std::size_t ENUM_COUNT = EnumAdapterType::count();
     using KeyArrayType = std::array<K, ENUM_COUNT>;
+    using StorageType = FixedBitSet<ENUM_COUNT>;
     static constexpr const KeyArrayType& ENUM_VALUES = EnumAdapterType::values();
 
     struct IndexPredicate
     {
-        const std::array<bool, ENUM_COUNT>* array_set_;
+        const StorageType* array_set_;
         constexpr bool operator()(const std::size_t index) const { return (*array_set_)[index]; }
         constexpr bool operator==(const IndexPredicate&) const = default;
     };
@@ -136,7 +138,7 @@ private:
         {
         }
 
-        constexpr ReferenceProvider(const std::array<bool, ENUM_COUNT>* array_set,
+        constexpr ReferenceProvider(const StorageType* array_set,
                                     const std::size_t current_index)
           : present_indices_{
                 CompileTimeIntegerRange<0, ENUM_COUNT>{}, current_index, IndexPredicate{array_set}}
@@ -207,7 +209,7 @@ public:
 
 public:  // Public so this type is a structural type and can thus be used in template parameters
     // std::bitset is not sufficiently constexpr to use here, using a std::array instead.
-    std::array<bool, ENUM_COUNT> IMPLEMENTATION_DETAIL_DO_NOT_USE_array_set_;
+    StorageType IMPLEMENTATION_DETAIL_DO_NOT_USE_array_set_;
     std::size_t IMPLEMENTATION_DETAIL_DO_NOT_USE_size_;
 
 public:
@@ -356,25 +358,30 @@ public:
         return contains_at(EnumAdapterType::ordinal(key));
     }
 
+    [[nodiscard]] constexpr bool contains(const EnumSet<K>& other) const noexcept
+    {
+        return ((other.array_set() & array_set()) == other.array_set());
+    }
+
     constexpr bool operator==(const EnumSet<K>& other) const
     {
         return array_set() == other.array_set();
     }
 
 private:
-    [[nodiscard]] constexpr const std::array<bool, ENUM_COUNT>& array_set() const
+    [[nodiscard]] constexpr const StorageType& array_set() const
     {
         return IMPLEMENTATION_DETAIL_DO_NOT_USE_array_set_;
     }
-    constexpr std::array<bool, ENUM_COUNT>& array_set()
+    constexpr StorageType& array_set()
     {
         return IMPLEMENTATION_DETAIL_DO_NOT_USE_array_set_;
     }
-    [[nodiscard]] constexpr const bool& array_set_unchecked_at(const std::size_t index) const
+    [[nodiscard]] constexpr bool array_set_unchecked_at(const std::size_t index) const
     {
         return IMPLEMENTATION_DETAIL_DO_NOT_USE_array_set_[index];
     }
-    constexpr bool& array_set_unchecked_at(const std::size_t index)
+    constexpr StorageType::reference array_set_unchecked_at(const std::size_t index)
     {
         return IMPLEMENTATION_DETAIL_DO_NOT_USE_array_set_[index];
     }
@@ -386,7 +393,10 @@ private:
     {
         IMPLEMENTATION_DETAIL_DO_NOT_USE_size_ -= n;
     }
-
+    constexpr void set_size(const std::size_t n)
+    {
+        IMPLEMENTATION_DETAIL_DO_NOT_USE_size_ = n;
+    }
     [[nodiscard]] constexpr const_iterator create_const_iterator(
         const std::size_t start_index) const noexcept
     {
@@ -408,6 +418,32 @@ private:
         assert_or_abort(contains_at(index));
         array_set_unchecked_at(index) = false;
         decrement_size();
+    }
+
+    constexpr EnumSet &operator+=(const K e) noexcept
+    {
+        insert(e);
+        return *this;
+    }
+
+    constexpr EnumSet &operator-=(const K e) noexcept
+    {
+        erase(e);
+        return *this;
+    }
+
+    constexpr EnumSet &operator+=(const EnumSet<K> &rhs) noexcept
+    {
+        array_set() |= rhs.array_set();
+        set_size(array_set().count());
+        return *this;
+    }
+
+    constexpr EnumSet &operator-=(const EnumSet<K> &rhs) noexcept
+    {
+        array_set() &= ~rhs.array_set();
+        set_size(array_set().count());
+        return *this;
     }
 };
 
