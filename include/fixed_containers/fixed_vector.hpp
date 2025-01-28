@@ -156,7 +156,7 @@ public:  // Public so this type is a structural type and can thus be used in tem
 public:
     constexpr FixedVectorBase() noexcept
       : IMPLEMENTATION_DETAIL_DO_NOT_USE_size_{0}
-    // Don't initialize the array
+      , IMPLEMENTATION_DETAIL_DO_NOT_USE_array_{}
     {
         // A constexpr context requires everything to be initialized.
         // The OptionalStorage wrapper takes care of that, but for unwrapped objects
